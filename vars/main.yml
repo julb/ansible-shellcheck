@@ -1,0 +1,3 @@
+---
+# vars file for shellcheck
+shellcheck_executable: /usr/local/sbin/shellcheck

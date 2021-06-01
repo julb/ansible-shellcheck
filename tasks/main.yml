@@ -1,0 +1,57 @@
+- name: shellcheck utility should be installed
+  become: yes
+  block:
+    - name: download shellcheck distribution
+      ansible.builtin.get_url:
+        url: "{{ shellcheck_releases_url }}/releases/download/v{{ shellcheck_version }}/shellcheck-v{{ shellcheck_version }}.{{ shellcheck_os }}.{{ shellcheck_arch }}.tar.xz"
+        dest: /tmp/
+        mode: 0755
+        owner: root
+        group: root
+      changed_when: no
+
+    - name: create target folder for shellcheck unarchiving
+      ansible.builtin.file:
+        path: "/tmp/shellcheck-v{{ shellcheck_version }}.{{ shellcheck_os }}.{{ shellcheck_arch }}"
+        state: directory
+        mode: 0755
+        owner: root
+        group: root
+      changed_when: no
+
+    - name: unarchive the shellcheck distribution and extract binary
+      ansible.builtin.unarchive:
+        remote_src: yes
+        src: "/tmp/shellcheck-v{{ shellcheck_version }}.{{ shellcheck_os }}.{{ shellcheck_arch }}.tar.xz"
+        dest: "/tmp/shellcheck-v{{ shellcheck_version }}.{{ shellcheck_os }}.{{ shellcheck_arch }}"
+      changed_when: no
+
+    - name: copy binary of shellcheck
+      ansible.builtin.copy:
+        remote_src: yes
+        src: /tmp/shellcheck-v{{ shellcheck_version }}.{{ shellcheck_os }}.{{ shellcheck_arch }}/shellcheck-v{{ shellcheck_version }}/shellcheck
+        dest: "{{ shellcheck_executable }}"
+        mode: 0755
+        owner: root
+        group: root
+  
+  always:
+    - name: remove shellcheck temporary files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - "/tmp/shellcheck-v{{ shellcheck_version }}.{{ shellcheck_os }}.{{ shellcheck_arch }}"
+        - "/tmp/shellcheck-v{{ shellcheck_version }}.{{ shellcheck_os }}.{{ shellcheck_arch }}.tar.xz"
+      changed_when: no
+
+- name: get shellcheck version
+  ansible.builtin.command: 
+    cmd: "{{ shellcheck_executable }} --version"
+  register: shellcheck_installed_version
+  changed_when: no
+
+- name: print installed shellcheck version
+  ansible.builtin.debug:
+    var: shellcheck_installed_version.stdout
+    verbosity: 1
